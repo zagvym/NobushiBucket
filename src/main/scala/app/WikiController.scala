@@ -10,7 +10,7 @@ class WikiController extends WikiControllerBase
   with CollaboratorsAuthenticator with ReferrerAuthenticator
 
 trait WikiControllerBase extends ControllerBase {
-  self: WikiService with RepositoryService with ActivityService
+  self: WikiService with RepositoryService with AccountService with ActivityService
     with CollaboratorsAuthenticator with ReferrerAuthenticator =>
 
   case class WikiPageEditForm(pageName: String, content: String, message: Option[String], currentPageName: String)

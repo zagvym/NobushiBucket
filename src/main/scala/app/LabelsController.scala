@@ -8,7 +8,7 @@ class LabelsController extends LabelsControllerBase
   with LabelsService with RepositoryService with AccountService with CollaboratorsAuthenticator
 
 trait LabelsControllerBase extends ControllerBase {
-  self: LabelsService with RepositoryService with CollaboratorsAuthenticator =>
+  self: LabelsService with RepositoryService with AccountService with CollaboratorsAuthenticator =>
 
   case class LabelForm(labelName: String, color: String)
 

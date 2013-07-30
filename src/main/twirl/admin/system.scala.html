@@ -1,4 +1,4 @@
-@(settings: service.SystemSettingsService.SystemSettings, info: Option[Any])(implicit context: app.Context)
+@(info: Option[Any])(implicit context: app.Context)
 @import context._
 @import view.helpers._
 @html.main("System Settings"){
@@ -11,11 +11,11 @@
           <label><strong>Account registration</strong></label>
           <fieldset>
             <label>
-              <input type="radio" name="allowAccountRegistration" value="true"@if(settings.allowAccountRegistration){ checked}>
+              <input type="radio" name="allowAccountRegistration" value="true"@if(systemSettings.allowAccountRegistration){ checked}>
               <strong>Allow</strong> - Users can create account by themselves.
             </label>
             <label>
-              <input type="radio" name="allowAccountRegistration" value="false"@if(!settings.allowAccountRegistration){ checked}>
+              <input type="radio" name="allowAccountRegistration" value="false"@if(!systemSettings.allowAccountRegistration){ checked}>
               <strong>Deny</strong> - Only administrators can create account.
             </label>
           </fieldset>

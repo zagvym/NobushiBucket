@@ -8,12 +8,10 @@ import jp.sf.amateras.scalatra.forms._
 import org.scalatra.FlashMapSupport
 
 class AccountController extends AccountControllerBase
-  with SystemSettingsService with AccountService with RepositoryService with ActivityService
-  with OneselfAuthenticator
+  with AccountService with RepositoryService with ActivityService with OneselfAuthenticator
 
 trait AccountControllerBase extends AccountManagementControllerBase with FlashMapSupport {
-  self: SystemSettingsService with AccountService with RepositoryService with ActivityService
-    with OneselfAuthenticator =>
+  self: AccountService with RepositoryService with ActivityService with OneselfAuthenticator =>
 
   case class AccountNewForm(userName: String, password: String,mailAddress: String,
                             url: Option[String], fileId: Option[String])
@@ -95,7 +93,7 @@ trait AccountControllerBase extends AccountManagementControllerBase with FlashMa
   })
 
   get("/register"){
-    if(loadSystemSettings().allowAccountRegistration){
+    if(context.systemSettings.allowAccountRegistration){
       if(context.loginAccount.isDefined){
         redirect("/")
       } else {
@@ -105,7 +103,7 @@ trait AccountControllerBase extends AccountManagementControllerBase with FlashMa
   }
 
   post("/register", newForm){ form =>
-    if(loadSystemSettings().allowAccountRegistration){
+    if(context.systemSettings.allowAccountRegistration){
       createAccount(form.userName, sha1(form.password), form.mailAddress, false, form.url)
       updateImage(form.userName, form.fileId, false)
       redirect("/signin")

@@ -18,7 +18,7 @@ class RepositoryViewerController extends RepositoryViewerControllerBase
  * The repository viewer.
  */
 trait RepositoryViewerControllerBase extends ControllerBase { 
-  self: RepositoryService with AccountService with ReferrerAuthenticator =>
+  self: RepositoryService  with AccountService with ReferrerAuthenticator =>
 
   /**
    * Returns converted HTML from Markdown for preview.

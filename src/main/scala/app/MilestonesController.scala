@@ -7,10 +7,10 @@ import util.{CollaboratorsAuthenticator, ReferrerAuthenticator}
 
 class MilestonesController extends MilestonesControllerBase
   with MilestonesService with RepositoryService with AccountService
-  with ReferrerAuthenticator with CollaboratorsAuthenticator
+with ReferrerAuthenticator with CollaboratorsAuthenticator
 
 trait MilestonesControllerBase extends ControllerBase {
-  self: MilestonesService with RepositoryService
+  self: MilestonesService with RepositoryService with AccountService
     with ReferrerAuthenticator with CollaboratorsAuthenticator  =>
 
   case class MilestoneForm(title: String, description: Option[String], dueDate: Option[java.util.Date])

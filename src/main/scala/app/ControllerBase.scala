@@ -1,42 +1,46 @@
 package app
 
 import _root_.util.Directory._
-import _root_.util.{StringUtil, FileUtil, Validations}
+import _root_.util.{SystemSettings, StringUtil, FileUtil, Validations}
 import org.scalatra._
 import org.scalatra.json._
 import org.json4s._
 import jp.sf.amateras.scalatra.forms._
 import org.apache.commons.io.FileUtils
-import model.Account
-import scala.Some
 import service.AccountService
 import javax.servlet.http.{HttpServletResponse, HttpSession, HttpServletRequest}
-import javax.servlet.{FilterChain, ServletResponse, ServletRequest}
+import javax.servlet._
 import java.text.SimpleDateFormat
+import scala.Some
+import model.Account
 
 /**
  * Provides generic features for controller implementations.
  */
 abstract class ControllerBase extends ScalatraFilter
-  with ClientSideValidationFormSupport with JacksonJsonSupport with AccountService with Validations {
+  with ClientSideValidationFormSupport with JacksonJsonSupport with Validations {
+  self: AccountService =>
 
   implicit val jsonFormats = DefaultFormats
 
   override def doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) {
-    val httpRequest  = request.asInstanceOf[HttpServletRequest]
-    val httpResponse = response.asInstanceOf[HttpServletResponse]
-    val context      = request.getServletContext.getContextPath
-    val path         = httpRequest.getRequestURI.substring(context.length)
+    val httpRequest    = request.asInstanceOf[HttpServletRequest]
+    val httpResponse   = response.asInstanceOf[HttpServletResponse]
+    val contextPath    = request.getServletContext.getContextPath
+    val path           = httpRequest.getRequestURI.substring(contextPath.length)
+    val systemSettings = SystemSettings()
+
+    val context = Context(servletContext.getContextPath, loginAccount(systemSettings), currentURL, httpRequest, systemSettings)
+    httpRequest.setAttribute("CONTEXT", context)
 
     if(path.startsWith("/console/")){
       val account = httpRequest.getCookies.find(_.getName == "gitbucket_login").flatMap { cookie =>
         try {
-          getAccountByUserName(StringUtil.decrypt(cookie.getValue))
+          getAccountByUserName(StringUtil.decrypt(cookie.getValue, systemSettings.blowfishKey))
         } catch {
           case e: Exception => None
         }
       } orNull
-//      val account = httpRequest.getSession.getAttribute("LOGIN_ACCOUNT").asInstanceOf[Account]
 
       if(account == null){
         // Redirect to login form
@@ -60,18 +64,18 @@ abstract class ControllerBase extends ScalatraFilter
   /**
    * Returns the context object for the request.
    */
-  implicit def context: Context = Context(servletContext.getContextPath, LoginAccount, currentURL, request)
+  implicit def context: Context = request.getAttribute("CONTEXT").asInstanceOf[Context]
 
   private def currentURL: String = {
     val queryString = request.getQueryString
     request.getRequestURI + (if(queryString != null) "?" + queryString else "")
   }
 
-  private def LoginAccount: Option[Account] = {
+  protected def loginAccount(systemSettings: SystemSettings): Option[Account] = {
     cookies.get("gitbucket_login") match {
       case Some(value) => {
         try {
-          val userName = StringUtil.decrypt(value)
+          val userName = StringUtil.decrypt(value, systemSettings.blowfishKey)
           getAccountByUserName(userName)
         } catch {
           case e: Exception => None
@@ -79,6 +83,11 @@ abstract class ControllerBase extends ScalatraFilter
       }
       case _ => None
     }
+  }
+
+  protected def baseUrl = {
+    val url = request.getRequestURL.toString
+    url.substring(0, url.length - (request.getRequestURI.length - request.getContextPath.length))
   }
 
   def ajaxGet(path : String)(action : => Any) : Route = {
@@ -129,17 +138,13 @@ abstract class ControllerBase extends ScalatraFilter
     }
   }
 
-  protected def baseUrl = {
-    val url = request.getRequestURL.toString
-    url.substring(0, url.length - (request.getRequestURI.length - request.getContextPath.length))
-  }
-
 }
 
 /**
  * Context object for the current request.
  */
-case class Context(path: String, loginAccount: Option[Account], currentUrl: String, request: HttpServletRequest){
+case class Context(path: String, loginAccount: Option[Account], currentUrl: String, request: HttpServletRequest,
+                   systemSettings: SystemSettings){
 
   /**
    * Get object from cache.

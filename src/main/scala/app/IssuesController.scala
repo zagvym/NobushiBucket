@@ -12,7 +12,7 @@ class IssuesController extends IssuesControllerBase
   with ReadableUsersAuthenticator with ReferrerAuthenticator with CollaboratorsAuthenticator
 
 trait IssuesControllerBase extends ControllerBase {
-  self: IssuesService with RepositoryService with LabelsService with MilestonesService with ActivityService
+  self: IssuesService with RepositoryService with AccountService with LabelsService with MilestonesService with ActivityService
     with ReadableUsersAuthenticator with ReferrerAuthenticator with CollaboratorsAuthenticator =>
 
   case class IssueCreateForm(title: String, content: Option[String],

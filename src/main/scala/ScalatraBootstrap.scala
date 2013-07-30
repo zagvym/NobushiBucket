@@ -1,3 +1,4 @@
+import _root_.util.SystemSettings
 import app._
 import org.scalatra._
 import javax.servlet._
@@ -24,5 +25,7 @@ class ScalatraBootstrap extends LifeCycle {
     if(!dir.exists){
       dir.mkdirs()
     }
+
+    SystemSettings.saveSystemSettings(SystemSettings())
   }
 }

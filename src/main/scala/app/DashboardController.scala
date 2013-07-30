@@ -4,11 +4,10 @@ import service._
 import util.UsersAuthenticator
 
 class DashboardController extends DashboardControllerBase
-  with IssuesService with RepositoryService with AccountService
-  with UsersAuthenticator
+  with IssuesService with RepositoryService with AccountService with UsersAuthenticator
 
 trait DashboardControllerBase extends ControllerBase {
-  self: IssuesService with RepositoryService with UsersAuthenticator =>
+  self: IssuesService with RepositoryService with AccountService with UsersAuthenticator =>
 
   get("/dashboard/issues/repos")(usersOnly {
     searchIssues("all")
