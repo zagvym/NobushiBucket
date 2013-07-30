@@ -18,9 +18,11 @@ import javax.servlet.{FilterChain, ServletResponse, ServletRequest}
  * Provides generic features for controller implementations.
  */
 abstract class ControllerBase extends ScalatraFilter
-  with ClientSideValidationFormSupport with JacksonJsonSupport with Validations {
+  with ClientSideValidationFormSupport with JacksonJsonSupport with AccountService with Validations {
 
   implicit val jsonFormats = DefaultFormats
+
+  val BlowfishKey = "1234"
 
   override def doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) {
     val httpRequest  = request.asInstanceOf[HttpServletRequest]
@@ -29,7 +31,15 @@ abstract class ControllerBase extends ScalatraFilter
     val path         = httpRequest.getRequestURI.substring(context.length)
 
     if(path.startsWith("/console/")){
-      val account = httpRequest.getSession.getAttribute("LOGIN_ACCOUNT").asInstanceOf[Account]
+      val account = httpRequest.getCookies.find(_.getName == "gitbucket_login").flatMap { cookie =>
+        try {
+          getAccountByUserName(StringUtil.decrypt(cookie.getValue, BlowfishKey))
+        } catch {
+          case e: Exception => None
+        }
+      } orNull
+//      val account = httpRequest.getSession.getAttribute("LOGIN_ACCOUNT").asInstanceOf[Account]
+
       if(account == null){
         // Redirect to login form
         httpResponse.sendRedirect(context + "/signin?" + path)
@@ -60,8 +70,15 @@ abstract class ControllerBase extends ScalatraFilter
   }
 
   private def LoginAccount: Option[Account] = {
-    session.get("LOGIN_ACCOUNT") match {
-      case Some(x: Account) => Some(x)
+    cookies.get("gitbucket_login") match {
+      case Some(value) => {
+        try {
+          val userName = StringUtil.decrypt(value, BlowfishKey)
+          getAccountByUserName(userName)
+        } catch {
+          case e: Exception => None
+        }
+      }
       case _ => None
     }
   }

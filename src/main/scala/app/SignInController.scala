@@ -3,6 +3,7 @@ package app
 import service._
 import util.StringUtil._
 import jp.sf.amateras.scalatra.forms._
+import util.StringUtil
 
 class SignInController extends SignInControllerBase with SystemSettingsService with AccountService
 
@@ -26,7 +27,7 @@ trait SignInControllerBase extends ControllerBase { self: SystemSettingsService 
   post("/signin", form){ form =>
     getAccountByUserName(form.userName).collect {
       case account if(!account.isGroupAccount && account.password == sha1(form.password)) => {
-        session.setAttribute("LOGIN_ACCOUNT", account)
+        cookies += ("gitbucket_login", StringUtil.encrypt(account.userName, BlowfishKey))
         updateLastLoginDate(account.userName)
 
         session.get("REDIRECT").map { redirectUrl =>
@@ -40,6 +41,7 @@ trait SignInControllerBase extends ControllerBase { self: SystemSettingsService 
   }
 
   get("/signout"){
+    cookies -= "gitbucket_login"
     session.invalidate
     redirect("/")
   }

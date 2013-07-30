@@ -1,6 +1,8 @@
 package util
 
 import java.net.{URLDecoder, URLEncoder}
+import javax.crypto.Cipher
+import javax.crypto.spec.SecretKeySpec
 
 object StringUtil {
 
@@ -14,6 +16,18 @@ object StringUtil {
     val md = java.security.MessageDigest.getInstance("MD5")
     md.update(value.getBytes)
     md.digest.map(b => "%02x".format(b)).mkString
+  }
+
+  def encrypt(value: String, key: String): String = {
+    val cipher = Cipher.getInstance("Blowfish")
+    cipher.init(Cipher.ENCRYPT_MODE,  new SecretKeySpec(key.getBytes, "Blowfish"));
+    cipher.doFinal(value.getBytes).map(b => "%02x".format(b)).mkString
+  }
+
+  def decrypt(value: String, key: String): String = {
+    val cipher = Cipher.getInstance("Blowfish")
+    cipher.init(Cipher.DECRYPT_MODE,  new SecretKeySpec(key.getBytes, "Blowfish"));
+    new String(cipher.doFinal(value.grouped(2).map(Integer.parseInt(_, 16).asInstanceOf[Byte]).toArray))
   }
 
   def urlEncode(value: String): String = URLEncoder.encode(value, "UTF-8")
