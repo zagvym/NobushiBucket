@@ -11,8 +11,8 @@ import model.Account
 import scala.Some
 import service.AccountService
 import javax.servlet.http.{HttpServletResponse, HttpSession, HttpServletRequest}
-import java.text.SimpleDateFormat
 import javax.servlet.{FilterChain, ServletResponse, ServletRequest}
+import java.text.SimpleDateFormat
 
 /**
  * Provides generic features for controller implementations.
@@ -21,8 +21,6 @@ abstract class ControllerBase extends ScalatraFilter
   with ClientSideValidationFormSupport with JacksonJsonSupport with AccountService with Validations {
 
   implicit val jsonFormats = DefaultFormats
-
-  val BlowfishKey = "1234"
 
   override def doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) {
     val httpRequest  = request.asInstanceOf[HttpServletRequest]
@@ -33,7 +31,7 @@ abstract class ControllerBase extends ScalatraFilter
     if(path.startsWith("/console/")){
       val account = httpRequest.getCookies.find(_.getName == "gitbucket_login").flatMap { cookie =>
         try {
-          getAccountByUserName(StringUtil.decrypt(cookie.getValue, BlowfishKey))
+          getAccountByUserName(StringUtil.decrypt(cookie.getValue))
         } catch {
           case e: Exception => None
         }
@@ -73,7 +71,7 @@ abstract class ControllerBase extends ScalatraFilter
     cookies.get("gitbucket_login") match {
       case Some(value) => {
         try {
-          val userName = StringUtil.decrypt(value, BlowfishKey)
+          val userName = StringUtil.decrypt(value)
           getAccountByUserName(userName)
         } catch {
           case e: Exception => None
