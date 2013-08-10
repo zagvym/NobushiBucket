@@ -59,7 +59,7 @@ trait WikiControllerBase extends ControllerBase {
     val commitId = params("commitId").split("\\.\\.\\.")
 
     JGitUtil.withGit(getWikiRepositoryDir(repository.owner, repository.name)){ git =>
-      wiki.html.compare(Some(pageName), getWikiDiffs(git, commitId(0), commitId(1)), repository)
+      wiki.html.compare(Some(pageName), JGitUtil.getDiffs(git, commitId(0), commitId(1), true), repository)
     }
   })
   
@@ -67,7 +67,7 @@ trait WikiControllerBase extends ControllerBase {
     val commitId   = params("commitId").split("\\.\\.\\.")
 
     JGitUtil.withGit(getWikiRepositoryDir(repository.owner, repository.name)){ git =>
-      wiki.html.compare(None, getWikiDiffs(git, commitId(0), commitId(1)), repository)
+      wiki.html.compare(None, JGitUtil.getDiffs(git, commitId(0), commitId(1), true), repository)
     }
   })
   
@@ -80,10 +80,10 @@ trait WikiControllerBase extends ControllerBase {
     val loginAccount = context.loginAccount.get
     
     saveWikiPage(repository.owner, repository.name, form.currentPageName, form.pageName,
-        form.content, loginAccount, form.message.getOrElse(""))
-    
-    updateLastActivityDate(repository.owner, repository.name)
-    recordEditWikiPageActivity(repository.owner, repository.name, loginAccount.userName, form.pageName)
+                 form.content, loginAccount, form.message.getOrElse("")).map { commitId =>
+      updateLastActivityDate(repository.owner, repository.name)
+      recordEditWikiPageActivity(repository.owner, repository.name, loginAccount.userName, form.pageName, commitId)
+    }
 
     redirect(s"/${repository.owner}/${repository.name}/wiki/${StringUtil.urlEncode(form.pageName)}")
   })
@@ -105,9 +105,10 @@ trait WikiControllerBase extends ControllerBase {
   })
   
   get("/:owner/:repository/wiki/:page/_delete")(collaboratorsOnly { repository =>
-      val pageName = StringUtil.urlDecode(params("page"))
+    val pageName = StringUtil.urlDecode(params("page"))
+    val account  = context.loginAccount.get
     
-    deleteWikiPage(repository.owner, repository.name, pageName, context.loginAccount.get.userName, s"Delete ${pageName}")
+    deleteWikiPage(repository.owner, repository.name, pageName, account.userName, account.mailAddress, s"Delete ${pageName}")
     updateLastActivityDate(repository.owner, repository.name)
 
     redirect(s"/${repository.owner}/${repository.name}/wiki")
@@ -135,12 +136,12 @@ trait WikiControllerBase extends ControllerBase {
   })
 
   private def unique: Constraint = new Constraint(){
-    def validate(name: String, value: String): Option[String] =
+    override def validate(name: String, value: String, params: Map[String, String]): Option[String] =
       getWikiPageList(params("owner"), params("repository")).find(_ == value).map(_ => "Page already exists.")
   }
 
   private def pagename: Constraint = new Constraint(){
-    def validate(name: String, value: String): Option[String] =
+    override def validate(name: String, value: String): Option[String] =
       if(value.exists("\\/:*?\"<>|".contains(_))){
         Some(s"${name} contains invalid character.")
       } else if(value.startsWith("_") || value.startsWith("-")){

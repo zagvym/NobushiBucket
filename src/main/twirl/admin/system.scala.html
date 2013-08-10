@@ -19,6 +19,57 @@
               <strong>Deny</strong> - Only administrators can create account.
             </label>
           </fieldset>
+          <hr>
+          <label><strong>Services</strong></label>
+          <fieldset>
+            <label>
+              <input type="checkbox" name="gravatar"@if(systemSettings.gravatar){ checked}/>
+              Gravatar
+            </label>
+          </fieldset>
+          <hr>
+          <label><strong>Notification email</strong></label>
+          <fieldset>
+            <label>
+              <input type="checkbox" id="notification" name="notification"@if(systemSettings.notification){ checked}/>
+              Send notifications
+            </label>
+          </fieldset>
+          <div class="form-horizontal">
+            <div class="control-group">
+              <label class="control-label" for="smtpHost">SMTP Host</label>
+              <div class="controls">
+                <input type="text" id="smtpHost" name="smtp.host" value="@systemSettings.smtp.map(_.host)"/>
+                <span id="error-smtp_host" class="error"></span>
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label" for="smtpPort">SMTP Port</label>
+              <div class="controls">
+                <input type="text" id="smtpPort" name="smtp.port" class="input-mini" value="@systemSettings.smtp.map(_.port)"/>
+                <span id="error-smtp_port" class="error"></span>
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label" for="smtpUser">SMTP User</label>
+              <div class="controls">
+                <input type="text" id="smtpUser" name="smtp.user" value="@systemSettings.smtp.map(_.user)"/>
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label" for="smtpPassword">SMTP Password</label>
+              <div class="controls">
+                <input type="password" id="smtpPassword" name="smtp.password" value="@systemSettings.smtp.map(_.password)"/>
+              </div>
+            </div>
+            <div class="control-group">
+              <div class="controls">
+                <label class="checkbox">
+                  <input type="checkbox" name="smtp.ssl"@if(systemSettings.smtp.flatMap(_.ssl).getOrElse(false)){ checked}/> Enable SSL
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <fieldset>
@@ -27,3 +78,10 @@
     </form>
   }
 }
+<script>
+$(function(){
+  $('#notification').change(function(){
+    $('.form-horizontal input').prop('disabled', !$(this).prop('checked'));
+  }).change();
+});
+</script>

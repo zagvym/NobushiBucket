@@ -2,6 +2,7 @@ package app
 
 import service.AccountService
 import util.{SystemSettings, AdminAuthenticator}
+import SystemSettings._
 import jp.sf.amateras.scalatra.forms._
 import org.scalatra.FlashMapSupport
 
@@ -11,11 +12,18 @@ class SystemSettingsController extends SystemSettingsControllerBase
 trait SystemSettingsControllerBase extends ControllerBase with FlashMapSupport {
   self: AccountService with AdminAuthenticator =>
 
-  private case class SystemSettingsForm(allowAccountRegistration: Boolean)
-
   private val form = mapping(
-    "allowAccountRegistration" -> trim(label("Account registration", boolean()))
-  )(SystemSettingsForm.apply)
+    "allowAccountRegistration" -> trim(label("Account registration", boolean())),
+    "gravatar"                 -> trim(label("Gravatar", boolean())),
+    "notification"             -> trim(label("Notification", boolean())),
+    "smtp"                     -> optionalIfNotChecked("notification", mapping(
+        "host"     -> trim(label("SMTP Host", text(required))),
+        "port"     -> trim(label("SMTP Port", optional(number()))),
+        "user"     -> trim(label("SMTP User", optional(text()))),
+        "password" -> trim(label("SMTP Password", optional(text()))),
+        "ssl"      -> trim(label("Enable SSL", optional(boolean())))
+    )(Smtp.apply))
+  )(SystemSettings.apply)
 
 
   get("/admin/system")(adminOnly {
@@ -23,9 +31,7 @@ trait SystemSettingsControllerBase extends ControllerBase with FlashMapSupport {
   })
 
   post("/admin/system", form)(adminOnly { form =>
-    SystemSettings.saveSystemSettings(context.systemSettings.copy(
-      allowAccountRegistration = form.allowAccountRegistration)
-    )
+    saveSystemSettings(form.copy(blowfishKey = context.systemSettings.blowfishKey))
     flash += "info" -> "System settings has been updated."
     redirect("/admin/system")
   })

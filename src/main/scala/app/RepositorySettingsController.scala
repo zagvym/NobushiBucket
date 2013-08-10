@@ -45,7 +45,15 @@ trait RepositorySettingsControllerBase extends ControllerBase with FlashMapSuppo
    * Save the repository options.
    */
   post("/:owner/:repository/settings/options", optionsForm)(ownerOnly { (form, repository) =>
-    saveRepositoryOptions(repository.owner, repository.name, form.description, form.defaultBranch, form.isPrivate)
+    saveRepositoryOptions(
+      repository.owner,
+      repository.name,
+      form.description,
+      form.defaultBranch,
+      repository.repository.parentUserName.map { _ =>
+        repository.repository.isPrivate
+      } getOrElse form.isPrivate
+    )
     flash += "info" -> "Repository settings has been updated."
     redirect(s"/${repository.owner}/${repository.name}/settings/options")
   })
@@ -104,7 +112,7 @@ trait RepositorySettingsControllerBase extends ControllerBase with FlashMapSuppo
    * Provides Constraint to validate the collaborator name.
    */
   private def collaborator: Constraint = new Constraint(){
-    def validate(name: String, value: String): Option[String] = {
+    override def validate(name: String, value: String): Option[String] = {
       val paths = request.getRequestURI.split("/")
       getAccountByUserName(value) match {
         case None => Some("User does not exist.")

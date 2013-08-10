@@ -2,6 +2,7 @@ package app
 
 import _root_.util.Directory._
 import _root_.util.{SystemSettings, StringUtil, FileUtil, Validations}
+import SystemSettings._
 import org.scalatra._
 import org.scalatra.json._
 import org.json4s._
@@ -187,12 +188,12 @@ trait AccountManagementControllerBase extends ControllerBase with FileUploadCont
   }
 
   protected def uniqueUserName: Constraint = new Constraint(){
-    def validate(name: String, value: String): Option[String] =
+    override def validate(name: String, value: String): Option[String] =
       getAccountByUserName(value).map { _ => "User already exists." }
   }
 
   protected def uniqueMailAddress(paramName: String = ""): Constraint = new Constraint(){
-    def validate(name: String, value: String): Option[String] =
+    override def validate(name: String, value: String, params: Map[String, String]): Option[String] =
       getAccountByMailAddress(value)
         .filter { x => if(paramName.isEmpty) true else Some(x.userName) != params.get(paramName) }
         .map    { _ => "Mail address is already registered." }

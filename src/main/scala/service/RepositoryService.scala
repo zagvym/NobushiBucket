@@ -15,19 +15,27 @@ trait RepositoryService { self: AccountService =>
    * @param userName the user name of the repository owner
    * @param description the repository description
    * @param isPrivate the repository type (private is true, otherwise false)
+   * @param originRepositoryName specify for the forked repository. (default is None)
+   * @param originUserName specify for the forked repository. (default is None)
    */
-  def createRepository(repositoryName: String, userName: String, description: Option[String], isPrivate: Boolean): Unit = {
+  def createRepository(repositoryName: String, userName: String, description: Option[String], isPrivate: Boolean,
+                       originRepositoryName: Option[String] = None, originUserName: Option[String] = None,
+                       parentRepositoryName: Option[String] = None, parentUserName: Option[String] = None): Unit = {
     Repositories insert
       Repository(
-        userName         = userName,
-        repositoryName   = repositoryName,
-        isPrivate        = isPrivate,
-        description      = description,
-        defaultBranch    = "master",
-        registeredDate   = currentDate,
-        updatedDate      = currentDate,
-        lastActivityDate = currentDate)
-    
+        userName             = userName,
+        repositoryName       = repositoryName,
+        isPrivate            = isPrivate,
+        description          = description,
+        defaultBranch        = "master",
+        registeredDate       = currentDate,
+        updatedDate          = currentDate,
+        lastActivityDate     = currentDate,
+        originUserName       = originUserName,
+        originRepositoryName = originRepositoryName,
+        parentUserName       = parentUserName,
+        parentRepositoryName = parentRepositoryName)
+
     IssueId insert (userName, repositoryName, 0)
   }
 
@@ -63,35 +71,42 @@ trait RepositoryService { self: AccountService =>
    */
   def getRepository(userName: String, repositoryName: String, baseUrl: String): Option[RepositoryInfo] = {
     (Query(Repositories) filter { t => t.byRepository(userName, repositoryName) } firstOption) map { repository =>
-      new RepositoryInfo(JGitUtil.getRepositoryInfo(repository.userName, repository.repositoryName, baseUrl), repository)
+      new RepositoryInfo(
+        JGitUtil.getRepositoryInfo(repository.userName, repository.repositoryName, baseUrl),
+        repository,
+        getForkedCount(
+          repository.originUserName.getOrElse(repository.userName),
+          repository.originRepositoryName.getOrElse(repository.repositoryName)
+        ))
     }
   }
 
-  /**
-   * Returns the list of specified user's repositories.
-   * It contains own repositories and collaboration repositories.
-   */
   def getUserRepositories(userName: String, baseUrl: String): List[RepositoryInfo] = {
     Query(Repositories).filter { t1 =>
       (t1.userName is userName.bind) ||
         (Query(Collaborators).filter { t2 => t2.byRepository(t1.userName, t1.repositoryName) && (t2.collaboratorName is userName.bind)} exists)
     }.sortBy(_.lastActivityDate desc).list.map{ repository =>
-      new RepositoryInfo(JGitUtil.getRepositoryInfo(repository.userName, repository.repositoryName, baseUrl), repository)
+      new RepositoryInfo(
+        JGitUtil.getRepositoryInfo(repository.userName, repository.repositoryName, baseUrl),
+        repository,
+        getForkedCount(
+          repository.originUserName.getOrElse(repository.userName),
+          repository.originRepositoryName.getOrElse(repository.repositoryName)
+        ))
     }
   }
 
   /**
    * Returns the list of visible repositories for the specified user.
    * If repositoryUserName is given then filters results by repository owner.
-   * 
+   *
    * @param loginAccount the logged in account
    * @param baseUrl the base url of this application
    * @param repositoryUserName the repository owner (if None then returns all repositories which are visible for logged in user)
    * @return the repository information which is sorted in descending order of lastActivityDate.
    */
   def getVisibleRepositories(loginAccount: Option[Account], baseUrl: String, repositoryUserName: Option[String] = None): List[RepositoryInfo] = {
-
-    val query = loginAccount match {
+    (loginAccount match {
       // for Administrators
       case Some(x) if(x.isAdmin) => Query(Repositories)
       // for Normal Users
@@ -101,12 +116,16 @@ trait RepositoryService { self: AccountService =>
         }
       // for Guests
       case None => Query(Repositories) filter(_.isPrivate is false.bind)
-    }
-
-    val filtered = repositoryUserName.map { userName => query.filter(_.userName is userName.bind) } getOrElse query
-
-    filtered.sortBy(_.lastActivityDate desc).list.map{ repository =>
-      new RepositoryInfo(JGitUtil.getRepositoryInfo(repository.userName, repository.repositoryName, baseUrl), repository)
+    }).filter { t =>
+      repositoryUserName.map { userName => t.userName is userName.bind } getOrElse ConstColumn.TRUE
+    }.sortBy(_.lastActivityDate desc).list.map{ repository =>
+      new RepositoryInfo(
+        JGitUtil.getRepositoryInfo(repository.userName, repository.repositoryName, baseUrl),
+        repository,
+        getForkedCount(
+          repository.originUserName.getOrElse(repository.userName),
+          repository.originRepositoryName.getOrElse(repository.repositoryName)
+        ))
     }
   }
 
@@ -173,17 +192,33 @@ trait RepositoryService { self: AccountService =>
     }
   }
 
+  // TODO It must be _.length instead of map (_.issueId) list).length.
+  //       But it does not work on Slick 1.0.1 (worked on Slick 1.0.0).
+  //       https://github.com/slick/slick/issues/170
+  private def getForkedCount(userName: String, repositoryName: String): Int =
+    Query(Repositories).filter { t =>
+      (t.originUserName is userName.bind) && (t.originRepositoryName is repositoryName.bind)
+    }.list.length
+
+
+  def getForkedRepositories(userName: String, repositoryName: String): List[String] =
+    Query(Repositories).filter { t =>
+      (t.originUserName is userName.bind) && (t.originRepositoryName is repositoryName.bind)
+    }
+    .sortBy(_.userName asc).map(_.userName).list
+
 }
 
 object RepositoryService {
 
   case class RepositoryInfo(owner: String, name: String, url: String, repository: Repository,
-    commitCount: Int, branchList: List[String], tags: List[util.JGitUtil.TagInfo]){
+    commitCount: Int, forkedCount: Int, branchList: List[String], tags: List[util.JGitUtil.TagInfo]){
 
-    def this(repo: JGitUtil.RepositoryInfo, model: Repository) = {
-      this(repo.owner, repo.name, repo.url, model, repo.commitCount, repo.branchList, repo.tags)
+    def this(repo: JGitUtil.RepositoryInfo, model: Repository, forkedCount: Int) = {
+      this(repo.owner, repo.name, repo.url, model, repo.commitCount, forkedCount, repo.branchList, repo.tags)
     }
-
   }
+
+  case class RepositoryTreeNode(owner: String, name: String, children: List[RepositoryTreeNode])
 
 }
