@@ -24,20 +24,22 @@ abstract class ControllerBase extends ScalatraFilter
 
   implicit val jsonFormats = DefaultFormats
 
+  before() {
+    val systemSettings = SystemSettings()
+    val context = Context(servletContext.getContextPath, loginAccount(systemSettings), currentURL, request, systemSettings)
+    request.setAttribute("CONTEXT", context)
+  }
+
   override def doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) {
     val httpRequest    = request.asInstanceOf[HttpServletRequest]
     val httpResponse   = response.asInstanceOf[HttpServletResponse]
     val contextPath    = request.getServletContext.getContextPath
     val path           = httpRequest.getRequestURI.substring(contextPath.length)
-    val systemSettings = SystemSettings()
-
-    val context = Context(servletContext.getContextPath, loginAccount(systemSettings), currentURL, httpRequest, systemSettings)
-    httpRequest.setAttribute("CONTEXT", context)
 
     if(path.startsWith("/console/")){
       val account = httpRequest.getCookies.find(_.getName == "gitbucket_login").flatMap { cookie =>
         try {
-          getAccountByUserName(StringUtil.decrypt(cookie.getValue, systemSettings.blowfishKey))
+          getAccountByUserName(StringUtil.decrypt(cookie.getValue, SystemSettings().blowfishKey))
         } catch {
           case e: Exception => None
         }
@@ -45,13 +47,13 @@ abstract class ControllerBase extends ScalatraFilter
 
       if(account == null){
         // Redirect to login form
-        httpResponse.sendRedirect(context + "/signin?" + path)
+        httpResponse.sendRedirect(contextPath + "/signin?" + path)
       } else if(account.isAdmin){
         // H2 Console (administrators only)
         chain.doFilter(request, response)
       } else {
         // Redirect to dashboard
-        httpResponse.sendRedirect(context + "/")
+        httpResponse.sendRedirect(contextPath + "/")
       }
     } else if(path.startsWith("/git/")){
       // Git repository

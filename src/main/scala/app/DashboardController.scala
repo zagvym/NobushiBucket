@@ -8,7 +8,8 @@ class DashboardController extends DashboardControllerBase
   with UsersAuthenticator
 
 trait DashboardControllerBase extends ControllerBase {
-  self: IssuesService with PullRequestService with RepositoryService with UsersAuthenticator =>
+  self: IssuesService with PullRequestService with RepositoryService with AccountService
+    with UsersAuthenticator =>
 
   get("/dashboard/issues/repos")(usersOnly {
     searchIssues("all")

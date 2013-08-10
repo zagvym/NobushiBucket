@@ -23,7 +23,7 @@ class PullRequestsController extends PullRequestsControllerBase
   with ReferrerAuthenticator with CollaboratorsAuthenticator
 
 trait PullRequestsControllerBase extends ControllerBase {
-  self: RepositoryService with IssuesService with MilestonesService with ActivityService with PullRequestService
+  self: RepositoryService with AccountService with IssuesService with MilestonesService with ActivityService with PullRequestService
     with ReferrerAuthenticator with CollaboratorsAuthenticator =>
 
   val pullRequestForm = mapping(

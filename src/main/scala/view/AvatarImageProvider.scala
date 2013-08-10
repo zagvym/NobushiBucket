@@ -14,13 +14,13 @@ trait AvatarImageProvider { self: RequestCache =>
       mailAddress: String = "", tooltip: Boolean = false)(implicit context: app.Context): Html = {
 
     val src = getAccountByUserName(userName).map { account =>
-      if(account.image.isEmpty && getSystemSettings().gravatar){
+      if(account.image.isEmpty && context.systemSettings.gravatar){
         s"""http://www.gravatar.com/avatar/${StringUtil.md5(account.mailAddress)}?s=${size}"""
       } else {
         s"""${context.path}/${userName}/_avatar"""
       }
     } getOrElse {
-      if(mailAddress.nonEmpty && getSystemSettings().gravatar){
+      if(mailAddress.nonEmpty && context.systemSettings.gravatar){
         s"""http://www.gravatar.com/avatar/${StringUtil.md5(mailAddress)}?s=${size}"""
       } else {
         s"""${context.path}/${userName}/_avatar"""
