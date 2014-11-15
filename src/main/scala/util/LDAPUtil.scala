@@ -45,8 +45,8 @@ object LDAPUtil {
     bind(
       host     = ldapSettings.host,
       port     = ldapSettings.port.getOrElse(SystemSettingsService.DefaultLdapPort),
-      dn       = ldapSettings.bindDN.getOrElse(""),
-      password = ldapSettings.bindPassword.getOrElse(""),
+      dn       = ldapSettings.bindDN.getOrElse(userName),
+      password = ldapSettings.bindPassword.getOrElse(password),
       tls      = ldapSettings.tls.getOrElse(false),
       keystore = ldapSettings.keystore.getOrElse(""),
       error    = "System LDAP authentication failed."
