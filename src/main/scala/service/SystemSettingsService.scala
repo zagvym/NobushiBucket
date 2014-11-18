@@ -35,6 +35,7 @@ trait SystemSettingsService {
           ldap.port.foreach(x => props.setProperty(LdapPort, x.toString))
           ldap.bindDN.foreach(x => props.setProperty(LdapBindDN, x))
           ldap.bindPassword.foreach(x => props.setProperty(LdapBindPassword, x))
+          ldap.fqdn.foreach(x => props.setProperty(LdapFqdn, x))
           props.setProperty(LdapBaseDN, ldap.baseDN)
           props.setProperty(LdapUserNameAttribute, ldap.userNameAttribute)
           ldap.additionalFilterCondition.foreach(x => props.setProperty(LdapAdditionalFilterCondition, x))
@@ -84,6 +85,7 @@ trait SystemSettingsService {
             getOptionValue(props, LdapPort, Some(DefaultLdapPort)),
             getOptionValue(props, LdapBindDN, None),
             getOptionValue(props, LdapBindPassword, None),
+            getOptionValue(props, LdapFqdn, None),
             getValue(props, LdapBaseDN, ""),
             getValue(props, LdapUserNameAttribute, ""),
             getOptionValue(props, LdapAdditionalFilterCondition, None),
@@ -125,6 +127,7 @@ object SystemSettingsService {
     port: Option[Int],
     bindDN: Option[String],
     bindPassword: Option[String],
+    fqdn: Option[String],
     baseDN: String,
     userNameAttribute: String,
     additionalFilterCondition: Option[String],
@@ -164,6 +167,7 @@ object SystemSettingsService {
   private val LdapPort = "ldap.port"
   private val LdapBindDN = "ldap.bindDN"
   private val LdapBindPassword = "ldap.bind_password"
+  private val LdapFqdn = "ldap.fqdn"
   private val LdapBaseDN = "ldap.baseDN"
   private val LdapUserNameAttribute = "ldap.username_attribute"
   private val LdapAdditionalFilterCondition = "ldap.additional_filter_condition"

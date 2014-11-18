@@ -41,6 +41,7 @@ trait SystemSettingsControllerBase extends ControllerBase {
         "port"                     -> trim(label("LDAP port", optional(number()))),
         "bindDN"                   -> trim(label("Bind DN", optional(text()))),
         "bindPassword"             -> trim(label("Bind Password", optional(text()))),
+        "fqdn"                     -> trim(label("FQDN", optional(text()))),
         "baseDN"                   -> trim(label("Base DN", text(required))),
         "userNameAttribute"        -> trim(label("User name attribute", text(required))),
         "additionalFilterCondition"-> trim(label("Additional filter condition", optional(text()))),

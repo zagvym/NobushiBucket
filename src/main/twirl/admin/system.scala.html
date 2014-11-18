@@ -120,6 +120,13 @@
               </div>
             </div>
             <div class="control-group">
+              <label class="control-label" for="ldapBindPassword">FQDN</label>
+              <div class="controls">
+                <input type="text" id="ldapFqdn" name="ldap.fqdn" value="@settings.ldap.map(_.fqdn)"/>
+                <span id="error-ldap_fqdn" class="error"></span>
+              </div>
+            </div>
+            <div class="control-group">
               <label class="control-label" for="ldapBaseDN">Base DN</label>
               <div class="controls">
                 <input type="text" id="ldapBaseDN" name="ldap.baseDN" value="@settings.ldap.map(_.baseDN)"/>

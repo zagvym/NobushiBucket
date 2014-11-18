@@ -42,17 +42,22 @@ object LDAPUtil {
    * Returns Right(LDAPUserInfo) if authentication is successful, otherwise  Left(errorMessage).
    */
   def authenticate(ldapSettings: Ldap, userName: String, password: String): Either[String, LDAPUserInfo] = {
+    val (bindName, authName, suffix) = userName.split("@").toList match {
+      case displayName::suffix::Nil => (userName, displayName, suffix)
+      case displayName::Nil => (displayName+ldapSettings.fqdn.getOrElse(""), displayName, "")
+      case _ => (userName, userName, "")
+    }
     bind(
       host     = ldapSettings.host,
       port     = ldapSettings.port.getOrElse(SystemSettingsService.DefaultLdapPort),
-      dn       = ldapSettings.bindDN.getOrElse(userName),
+      dn       = ldapSettings.bindDN.getOrElse(bindName),
       password = ldapSettings.bindPassword.getOrElse(password),
       tls      = ldapSettings.tls.getOrElse(false),
       keystore = ldapSettings.keystore.getOrElse(""),
       error    = "System LDAP authentication failed."
     ){ conn =>
-      findUser(conn, userName, ldapSettings.baseDN, ldapSettings.userNameAttribute, ldapSettings.additionalFilterCondition) match {
-        case Some(userDN) => userAuthentication(ldapSettings, userDN, userName, password)
+      findUser(conn, authName, ldapSettings.baseDN, ldapSettings.userNameAttribute, ldapSettings.additionalFilterCondition) match {
+        case Some(userDN) => userAuthentication(ldapSettings, userDN, authName, password)
         case None         => Left("User does not exist.")
       }
     }
@@ -155,7 +160,7 @@ object LDAPUtil {
         entries.flatten
       }
     }
-    
+
     val filterCond = additionalFilterCondition match {
       case None => userNameAttribute + "=" + userName
       case Some(x) if x.startsWith("(") && x.endsWith(")") => s"(&$x($userNameAttribute=$userName))"
