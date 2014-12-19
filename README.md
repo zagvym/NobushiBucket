@@ -1,4 +1,4 @@
-GitBucket [![Gitter chat](https://badges.gitter.im/takezoe/gitbucket.png)](https://gitter.im/takezoe/gitbucket) [![Build Status](https://buildhive.cloudbees.com/job/takezoe/job/gitbucket/badge/icon)](https://buildhive.cloudbees.com/job/takezoe/job/gitbucket/)
+GitBucket [![Gitter chat](https://badges.gitter.im/takezoe/gitbucket.png)](https://gitter.im/takezoe/gitbucket) [![Build Status](https://travis-ci.org/takezoe/gitbucket.svg?branch=master)](https://travis-ci.org/takezoe/gitbucket)
 =========
 
 GitBucket is the easily installable Github clone written with Scala.
@@ -80,6 +80,13 @@ Run the following commands in `Terminal` to
 
 Release Notes
 --------
+### 2.6 - 24 Nov 2014
+- Search box at issues and pull requests
+- Information from administrator
+- Pull request UI has been updated
+- Move to TravisCI from Buildhive
+- Some bug fix and improvements
+
 ### 2.5 - 4 Nov 2014
 - New Dashboard
 - Change datetime format

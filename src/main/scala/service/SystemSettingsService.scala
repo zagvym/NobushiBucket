@@ -12,6 +12,7 @@ trait SystemSettingsService {
   def saveSystemSettings(settings: SystemSettings): Unit = {
     defining(new java.util.Properties()){ props =>
       settings.baseUrl.foreach(x => props.setProperty(BaseURL, x.replaceFirst("/\\Z", "")))
+      settings.information.foreach(x => props.setProperty(Information, x))
       props.setProperty(AllowAccountRegistration, settings.allowAccountRegistration.toString)
       props.setProperty(Gravatar, settings.gravatar.toString)
       props.setProperty(Notification, settings.notification.toString)
@@ -61,6 +62,7 @@ trait SystemSettingsService {
       }
       SystemSettings(
         getOptionValue[String](props, BaseURL, None).map(x => x.replaceFirst("/\\Z", "")),
+        getOptionValue[String](props, Information, None),
         getValue(props, AllowAccountRegistration, false),
         getValue(props, Gravatar, true),
         getValue(props, Notification, false),
@@ -107,6 +109,7 @@ object SystemSettingsService {
 
   case class SystemSettings(
     baseUrl: Option[String],
+    information: Option[String],
     allowAccountRegistration: Boolean,
     gravatar: Boolean,
     notification: Boolean,
@@ -150,6 +153,7 @@ object SystemSettingsService {
   val DefaultLdapPort = 389
 
   private val BaseURL = "base_url"
+  private val Information = "information"
   private val AllowAccountRegistration = "allow_account_registration"
   private val Gravatar = "gravatar"
   private val Notification = "notification"
